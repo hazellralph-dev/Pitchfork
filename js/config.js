@@ -6,6 +6,6 @@ window.PITCHFORK_CONFIG = {
   supabaseUrl: 'https://qewsnzdsbtogyvkaogpr.supabase.co',
   supabaseKey: 'sb_publishable_cg1Nk7imOLJmx34OLDKsiA_kntdHlNw',
   // Map centre and radius
-  centre: { lat: 51.7745, lng: -2.1640, name: 'Sheepscombe' },
+  centre: { lat: 51.7900, lng: -2.1580, name: 'Sheepscombe' },
   radiusMiles: 3
 };

@@ -127,6 +127,77 @@ function makeMap(el, { onClick } = {}){
 }
 const pinIcon = (cat, me) => L.divIcon({ className: 'pf', html: `<span class="pin ${me ? 'me' : ''}">${nat(cat, 30)}</span>`, iconSize: [40, 40], iconAnchor: [20, 20] });
 
+
+/* ---------- illustrated Explore map ----------
+   Drawn from real positions: 1 mile = 130/radius px, Sheepscombe at (150,170). */
+const MAP_W = 300, MAP_H = 340, MAP_R = 130;
+function project(lat, lng){
+  const ppm = MAP_R / CFG.radiusMiles;
+  const dx = (lng - CFG.centre.lng) * 69.17 * Math.cos(CFG.centre.lat * Math.PI / 180);
+  const dy = (lat - CFG.centre.lat) * 69.0;
+  return [150 + dx * ppm, 170 - dy * ppm];
+}
+function curve(points){
+  const p = points.map(([la, ln]) => project(la, ln));
+  let d = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+function blob(lat, lng, rx, ry, seed){
+  const [cx, cy] = project(lat, lng); let d = '';
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, w = 1 + 0.18 * Math.sin(k * 2.3 + seed);
+    const x = cx + Math.cos(a) * rx * w, y = cy + Math.sin(a) * ry * w; d += (k ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
+  return d + ' Z';
+}
+const ROADS = [
+  [[51.735,-2.214],[51.744,-2.217],[51.760,-2.211],[51.774,-2.201],[51.785,-2.194],[51.800,-2.197],[51.815,-2.204],[51.832,-2.210]],
+  [[51.744,-2.215],[51.752,-2.200],[51.763,-2.187],[51.776,-2.180],[51.788,-2.166],[51.800,-2.146],[51.815,-2.126],[51.830,-2.110]],
+  [[51.785,-2.194],[51.788,-2.178],[51.790,-2.158],[51.794,-2.150]],
+  [[51.790,-2.158],[51.800,-2.162],[51.811,-2.160],[51.828,-2.152]],
+  [[51.7517,-2.1409],[51.748,-2.165],[51.745,-2.190],[51.744,-2.215]],
+  [[51.7517,-2.1409],[51.765,-2.115],[51.7773,-2.0916],[51.784,-2.070]],
+  [[51.7912,-2.1196],[51.785,-2.104],[51.7773,-2.0916]],
+  [[51.7912,-2.1196],[51.797,-2.135],[51.800,-2.146]],
+  [[51.7517,-2.1409],[51.738,-2.140]]
+];
+const STREAMS = [
+  [[51.783,-2.168],[51.774,-2.176],[51.763,-2.188],[51.752,-2.204],[51.742,-2.222]],
+  [[51.806,-2.186],[51.795,-2.196],[51.782,-2.203],[51.768,-2.214],[51.752,-2.232]]
+];
+const WOODS = [[51.808,-2.170,26,16,1],[51.796,-2.150,18,12,2],[51.768,-2.160,16,10,3],[51.770,-2.120,20,12,4],[51.758,-2.105,14,9,5],[51.800,-2.110,15,10,6],[51.776,-2.235,16,11,7]];
+const PLACES = [
+  ['Painswick', 51.7849, -2.1937], ['Slad', 51.7628, -2.1874], ['Bisley', 51.7517, -2.1409], ['Miserden', 51.7773, -2.0916],
+  ['Cranham', 51.811, -2.160], ['Whiteway', 51.7912, -2.1196], ['Edge', 51.7864, -2.2217], ['Pitchcombe', 51.7691, -2.2217], ['Bulls Cross', 51.776, -2.180]
+];
+function illustratedMap(sellers){
+  const inRing = (x, y) => Math.hypot(x - 150, y - 170) < MAP_R + 40;
+  const labels = PLACES.map(([n, la, ln]) => { const [x, y] = project(la, ln); return inRing(x, y) && x > 8 && x < MAP_W - 8 && y > 10 && y < MAP_H - 6
+    ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#6B7A62"/><text x="${(x > 220 ? x - 5 : x + 5).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="${x > 220 ? 'end' : 'start'}">${n}</text>` : ''; }).join('');
+  const [sx, sy] = project(51.744, -2.217);
+  const svg = `<svg viewBox="0 0 ${MAP_W} ${MAP_H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="${MAP_W}" height="${MAP_H}" fill="#DCE5D0"/>
+    <g fill="#C6D6B5">${WOODS.map(w => `<path d="${blob(...w)}"/>`).join('')}</g>
+    <g fill="none" stroke="#9EC2CF" stroke-width="2.4" stroke-linecap="round">${STREAMS.map(r => `<path d="${curve(r)}"/>`).join('')}</g>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#B5BFA8" stroke-width="7">${ROADS.map(r => `<path d="${curve(r)}"/>`).join('')}</g>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#fff" stroke-width="4.5">${ROADS.map(r => `<path d="${curve(r)}"/>`).join('')}</g>
+    <circle cx="150" cy="170" r="${MAP_R}" fill="#8B6B4A" fill-opacity=".06" stroke="#8B6B4A" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 5"/>
+    <g font-family="'Instrument Sans','Segoe UI',sans-serif" font-size="10.5" fill="#2F4035">${labels}
+      <circle cx="150" cy="170" r="6" fill="#D8B572" stroke="#1E2A33" stroke-width="1.5"/>
+      <text x="158" y="166" font-weight="700" font-size="11.5" fill="#1E2A33">${esc(CFG.centre.name)}</text>
+      <text x="${Math.max(6, sx - 10).toFixed(1)}" y="${Math.min(MAP_H - 8, sy + 14).toFixed(1)}" font-style="italic" fill="#54606A">to Stroud</text>
+      <text x="${(150 + MAP_R * .72).toFixed(1)}" y="${(170 - MAP_R * .72).toFixed(1)}" font-weight="700" fill="#8B6B4A">${CFG.radiusMiles} mi</text>
+      <path d="M22 30 27 16 32 30 27 26z" fill="#2F4035"/><text x="23" y="44" font-weight="700" font-size="10">N</text></g>
+  </svg>`;
+  const pins = sellers.filter(s => s.lat != null && s.lng != null).map(s => {
+    let [x, y] = project(s.lat, s.lng); x = Math.max(16, Math.min(MAP_W - 16, x)); y = Math.max(16, Math.min(MAP_H - 16, y));
+    return `<a class="pin" href="#/seller/${s.id}" style="left:${(x / MAP_W * 100).toFixed(2)}%;top:${(y / MAP_H * 100).toFixed(2)}%" aria-label="${esc(s.name)}" title="${esc(s.name)}">${nat(mainCat(s), 26)}</a>`; }).join('');
+  return `<div class="illmap" role="region" aria-label="Map of sellers around ${esc(CFG.centre.name)}">${svg}${pins}</div>`;
+}
+
 /* ================= SCREENS ================= */
 
 /* ---------- Home: map and list ---------- */
@@ -143,7 +214,7 @@ async function homeView(){
   </header>
   <main class="main">
     <section class="map-wrap" aria-label="Map of local sellers">
-      <div id="homemap" class="map" role="region" aria-label="Map"></div>
+      ${illustratedMap(shown)}
       <nav class="rail" aria-label="Filter by produce">${CATS.map(([id, l]) => `<button data-act="cat" data-id="${id}" aria-pressed="${st.cat === id}">${nat(id, 28)}<span>${l}</span></button>`).join('')}</nav>
     </section>
     <section class="section">
@@ -159,11 +230,7 @@ async function homeView(){
       <span class="col grow" style="gap:2px"><span class="display" style="font-weight:800;font-size:17px">More than your freezer can hold?</span><span style="font-size:14px">Sell your surplus to neighbours with Pitchfork.</span></span>${ic('next',18,2.2)}</a>
     <p class="small muted" style="text-align:center"><a href="#/about">About Pitchfork, terms and privacy</a></p>
   </main>${tabbar('home')}`;
-  return { html, after(){
-    const m = makeMap(document.getElementById('homemap'));
-    shown.filter(s => s.lat != null).forEach(s => L.marker([s.lat, s.lng], { icon: pinIcon(mainCat(s)), title: s.name, alt: s.name, keyboard: true })
-      .addTo(m).on('click', () => go('#/seller/' + s.id)));
-  } };
+  return { html };
 }
 
 /* ---------- Seller page ---------- */
