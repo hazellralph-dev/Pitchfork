@@ -1,7 +1,7 @@
 {
   "name": "Pitchfork",
   "short_name": "Pitchfork",
-  "description": "Neighbours' surplus, straight from the farm gate",
+  "description": "Buy direct from local small producers",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#EFEBE3",

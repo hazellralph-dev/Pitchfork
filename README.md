@@ -1,6 +1,6 @@
 # Pitchfork
 
-Neighbours' surplus, straight from the farm gate. A local marketplace where smallholders within 3 miles of Sheepscombe sell surplus meat, veg and fruit to neighbours. Buyers reserve online and pay the seller directly; Pitchfork takes no payments.
+Buy direct from local small producers. A local marketplace where smallholders within 3 miles of Sheepscombe sell surplus meat, veg and fruit to neighbours. Buyers reserve online and pay the seller directly; Pitchfork takes no payments.
 
 - **Website:** plain HTML, CSS and JavaScript (no build step), hosted on Netlify.
 - **Back end:** Supabase (database, logins, photo storage).

@@ -209,7 +209,7 @@ async function homeView(){
   const html = `
   <header class="hero">
     <div class="row between"><a href="#/" class="brand">${ic('fork',30,2,'#F6E3B8')}Pitchfork</a></div>
-    <p style="font-size:15px">Neighbours' surplus, straight from the farm gate</p>
+    <p style="font-size:15px">Buy direct from local small producers</p>
     <div class="row" style="gap:6px;align-self:flex-start;padding:6px 12px 6px 8px;border-radius:999px;background:var(--brand-dk);font-size:13px;font-weight:600">${ic('pinMark',16,2.2,'#D8B572')}Within ${CFG.radiusMiles} miles of ${esc(CFG.centre.name)}</div>
   </header>
   <main class="main">
