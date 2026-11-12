@@ -39,7 +39,7 @@ const ic = (k, s=22, w=2, color='currentColor') =>
 const nat = (k, s) => `<img src="${IMG[k] || IMG.all}" alt="" width="${s}" height="${s}" style="flex-shrink:0">`;
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gbp = (n) => (n === null || n === undefined || n === '' || isNaN(n)) ? '[price]' : '£' + Number(n).toFixed(2);
-const CATS = [['all','All'],['cow','Beef'],['sheep','Lamb'],['pig','Pork'],['veg','Veg'],['fruit','Fruit']];
+const CATS = [['all','All'],['cow','Beef'],['sheep','Lamb'],['pig','Pork'],['chickens','Chicken'],['eggs','Eggs'],['veg','Veg'],['fruit','Fruit'],['honey','Honey'],['flowers','Flowers']];
 const catLabel = (k) => (CATS.find(c => c[0] === k) || ['', ''])[1];
 const mainCat = (s) => (s.cats && s.cats[0]) || 'all';
 const photoUrl = (path) => path ? sb.storage.from('photos').getPublicUrl(path).data.publicUrl : null;
@@ -176,7 +176,7 @@ const PLACES = [
 function illustratedMap(sellers){
   const inRing = (x, y) => Math.hypot(x - 150, y - 170) < MAP_R + 40;
   const labels = PLACES.map(([n, la, ln]) => { const [x, y] = project(la, ln); return inRing(x, y) && x > 8 && x < MAP_W - 8 && y > 10 && y < MAP_H - 6
-    ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#6B7A62"/><text x="${(x > 220 ? x - 5 : x + 5).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="${x > 220 ? 'end' : 'start'}">${n}</text>` : ''; }).join('');
+    ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#6B7A62"/><text x="${(x > 240 ? x - 5 : x + 5).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="${x > 240 ? 'end' : 'start'}">${n}</text>` : ''; }).join('');
   const [sx, sy] = project(51.744, -2.217);
   const svg = `<svg viewBox="0 0 ${MAP_W} ${MAP_H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <rect width="${MAP_W}" height="${MAP_H}" fill="#DCE5D0"/>
@@ -187,7 +187,7 @@ function illustratedMap(sellers){
     <circle cx="150" cy="170" r="${MAP_R}" fill="#8B6B4A" fill-opacity=".06" stroke="#8B6B4A" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 5"/>
     <g font-family="'Instrument Sans','Segoe UI',sans-serif" font-size="10.5" fill="#2F4035">${labels}
       <circle cx="150" cy="170" r="6" fill="#D8B572" stroke="#1E2A33" stroke-width="1.5"/>
-      <text x="158" y="166" font-weight="700" font-size="11.5" fill="#1E2A33">${esc(CFG.centre.name)}</text>
+      <text x="150" y="156" text-anchor="middle" font-weight="700" font-size="11.5" fill="#1E2A33" stroke="#DCE5D0" stroke-width="3" paint-order="stroke">${esc(CFG.centre.name)}</text>
       <text x="${Math.max(6, sx - 10).toFixed(1)}" y="${Math.min(MAP_H - 8, sy + 14).toFixed(1)}" font-style="italic" fill="#54606A">to Stroud</text>
       <text x="${(150 + MAP_R * .72).toFixed(1)}" y="${(170 - MAP_R * .72).toFixed(1)}" font-weight="700" fill="#8B6B4A">${CFG.radiusMiles} mi</text>
       <path d="M22 30 27 16 32 30 27 26z" fill="#2F4035"/><text x="23" y="44" font-weight="700" font-size="10">N</text></g>
@@ -205,7 +205,7 @@ async function homeView(){
   const r = await fetchPublic();
   const all = r.data || [];
   const shown = st.cat === 'all' ? all : all.filter(s => (s.cats || []).includes(st.cat));
-  const heading = { all: 'Selling near you', cow: 'Beef near you', sheep: 'Lamb near you', pig: 'Pork near you', veg: 'Veg near you', fruit: 'Fruit near you' }[st.cat];
+  const heading = st.cat === 'all' ? 'Selling near you' : catLabel(st.cat) + ' near you';
   const html = `
   <header class="hero">
     <div class="row between"><a href="#/" class="brand">${ic('fork',30,2,'#F6E3B8')}Pitchfork</a></div>
@@ -213,10 +213,8 @@ async function homeView(){
     <div class="row" style="gap:6px;align-self:flex-start;padding:6px 12px 6px 8px;border-radius:999px;background:var(--brand-dk);font-size:13px;font-weight:600">${ic('pinMark',16,2.2,'#D8B572')}Within ${CFG.radiusMiles} miles of ${esc(CFG.centre.name)}</div>
   </header>
   <main class="main">
-    <section class="map-wrap" aria-label="Map of local sellers">
-      ${illustratedMap(shown)}
-      <nav class="rail" aria-label="Filter by produce">${CATS.map(([id, l]) => `<button data-act="cat" data-id="${id}" aria-pressed="${st.cat === id}">${nat(id, 28)}<span>${l}</span></button>`).join('')}</nav>
-    </section>
+    <nav class="filters" aria-label="Filter by produce">${CATS.map(([id, l]) => `<button data-act="cat" data-id="${id}" aria-pressed="${st.cat === id}">${nat(id, 28)}<span>${l}</span></button>`).join('')}</nav>
+    <section class="map-wrap" aria-label="Map of local sellers">${illustratedMap(shown)}</section>
     <section class="section">
       <div class="row between" style="align-items:baseline"><h2 style="font-size:21px">${heading}</h2><span class="small muted">${shown.length} seller${shown.length === 1 ? '' : 's'}</span></div>
       ${r.error ? notice('Couldn’t load sellers. Check your connection and refresh.', 'err') : ''}

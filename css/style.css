@@ -96,7 +96,11 @@ legend{padding:0;margin-bottom:12px;font-family:var(--display);font-weight:800;f
 .rail button{width:52px;height:54px}
 .rail button[aria-pressed="true"],.cats button[aria-pressed="true"]{background:var(--brand-lt);border:2px solid var(--brand)}
 .rail span,.cats span{font-size:11px;font-weight:600}
-.cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.filters button{flex:0 0 auto;width:62px;height:58px;border-radius:14px;border:1.5px solid var(--line2);background:#fff;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0}
+.filters button[aria-pressed="true"]{background:var(--brand-lt);border:2px solid var(--brand)}
+.filters span{font-size:11px;font-weight:600}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
 .cats button{height:66px}
 .pin{width:40px;height:40px;border-radius:20px;background:#fff;border:2px solid var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(30,42,51,.3)}
 .pin.me{border-color:var(--honey);border-width:3px}
