@@ -679,7 +679,15 @@ async function runNow(key, fn){ clearTimeout(saver.timers[key]); saver.fns[key] 
 /* ---------- Admin ---------- */
 async function adminView(parts){
   if (!uid()) return { html: `${topbar('', 'Admin')}<main class="main">${signInPrompt('Log in as an admin', '/admin')}</main>${tabbar('admin')}` };
-  if (!isAdmin()) return { html: `${topbar('#/', 'Admin')}<main class="main">${notice('This area is for the Pitchfork team.', 'warn')}</main>${tabbar('home')}` };
+  if (!isAdmin()) {
+    await loadProfile();
+    if (!isAdmin()) return { html: `${topbar('#/', 'Admin')}<main class="main">${notice('This area is for the Pitchfork team.', 'warn')}
+      <div class="card col small" style="padding:14px;gap:4px"><strong>What the site can see</strong>
+        <span>Signed in as: ${esc(st.session.user.email)}</span>
+        <span>Account id: <span class="num">${esc(uid())}</span></span>
+        <span>Profile found: ${st.profile ? 'yes' : 'no'}${st.profile ? ' · role: ' + esc(st.profile.role) + ' · email on profile: ' + esc(st.profile.email) : ''}</span>
+        ${st.profileError ? `<span style="color:var(--danger)">Error reading profile: ${esc(st.profileError)}</span>` : ''}</div></main>${tabbar('home')}` };
+  }
   const tab = parts[1] || 'sellers';
   if (tab === 'seller' && parts[2]) return editorView(parts[2], true);
   const tabs = `<nav class="tabs" aria-label="Admin sections">${[['sellers', 'Sellers'], ['orders', 'Orders'], ['people', 'People']].map(t => `<a href="#/admin/${t[0]}" ${tab === t[0] ? 'aria-current="page"' : ''}>${t[1]}</a>`).join('')}</nav>`;
@@ -903,8 +911,8 @@ window.addEventListener('beforeunload', (e) => { if (Object.keys(saver.timers).l
 /* ================= START ================= */
 async function loadProfile(){
   if (!uid()) { st.profile = null; return; }
-  const { data: p } = await sb.from('profiles').select('*').eq('id', uid()).maybeSingle();
-  st.profile = p || null;
+  const { data: p, error } = await sb.from('profiles').select('*').eq('id', uid()).maybeSingle();
+  st.profile = p || null; st.profileError = error ? (error.message + (error.code ? ' (' + error.code + ')' : '')) : '';
 }
 window.addEventListener('hashchange', () => {
   if (Object.keys(saver.timers).length) flushSaves();
