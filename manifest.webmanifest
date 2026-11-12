@@ -1,0 +1,10 @@
+{
+  "name": "Pitchfork",
+  "short_name": "Pitchfork",
+  "description": "Neighbours' surplus, straight from the farm gate",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#EFEBE3",
+  "theme_color": "#8B6B4A",
+  "icons": [{ "src": "img/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
