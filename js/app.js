@@ -11,7 +11,7 @@ if (!window.supabase || !window.L) {
   return;
 }
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {
-  auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  auth: { flowType: 'implicit', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
 /* ---------------- helpers ---------------- */
@@ -423,12 +423,12 @@ async function submitForm(kind, fd){
     if (!fd.get('terms')) { st.authMsg = { text: 'Please agree to the terms to continue.', kind: 'err' }; return refresh(); }
     const wantsToSell = !!fd.get('sell');
     const { data: res, error } = await sb.auth.signUp({ email: fd.get('email').trim(), password: fd.get('password'),
-      options: { data: { full_name: fd.get('name').trim(), wants_to_sell: wantsToSell }, emailRedirectTo: siteUrl() + (wantsToSell ? '#/sell' : '#/account') } });
+      options: { data: { full_name: fd.get('name').trim(), wants_to_sell: wantsToSell }, emailRedirectTo: siteUrl() } });
     if (error) { st.authMsg = { text: errMsg(error), kind: 'err' }; return refresh(); }
     if (!res.session) { st.authMsg = { text: 'Nearly there: check your email and tap the link to confirm your account.', kind: '' }; return go('#/login'); }
     await afterSignIn(); go(wantsToSell ? '#/sell' : nextHash());
   } else if (kind === 'forgot') {
-    const { error } = await sb.auth.resetPasswordForEmail(fd.get('email').trim(), { redirectTo: siteUrl() + '#/reset' });
+    const { error } = await sb.auth.resetPasswordForEmail(fd.get('email').trim(), { redirectTo: siteUrl() });
     st.authMsg = error ? { text: errMsg(error), kind: 'err' } : { text: 'If that email has an account, a reset link is on its way.', kind: '' };
     refresh();
   } else if (kind === 'reset') {
@@ -743,6 +743,7 @@ function aboutView(){
 
 /* ================= ROUTER ================= */
 function parseHash(){
+  if (/access_token=|error_description=/.test(location.hash)) return { parts: [], q: new URLSearchParams() };
   const raw = location.hash.replace(/^#\/?/, '');
   const [path, query] = raw.split('?');
   return { parts: path.split('/').filter(Boolean), q: new URLSearchParams(query || '') };
@@ -924,11 +925,13 @@ sb.auth.onAuthStateChange((event, session) => {
   setTimeout(async () => {
     const changed = (session && session.user && session.user.id) !== uid();
     st.session = session;
-    if (event === 'PASSWORD_RECOVERY') { location.hash = '#/reset'; return; }
+    if (event === 'PASSWORD_RECOVERY') { st.authMsg = null; if (location.hash !== '#/reset') location.hash = '#/reset'; else render(); return; }
     if (changed && st.authReady) { await loadProfile(); invalidate(''); st.ed = null; render(); }
   }, 0);
 });
+const linkError = (() => { const h = new URLSearchParams(location.hash.replace(/^#/, '')); return h.get('error_description') || ''; })();
 (async () => {
+  if (linkError) { history.replaceState(null, '', siteUrl() + '#/login'); st.authMsg = { text: /expired|invalid/i.test(linkError) ? 'That email link has expired or was already used. Please ask for a new one.' : linkError, kind: 'err' }; }
   const { data: d } = await sb.auth.getSession();
   st.session = d.session; await loadProfile(); st.authReady = true;
   render();
